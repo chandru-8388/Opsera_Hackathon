@@ -1,4 +1,4 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, field_validator
 
@@ -33,3 +33,23 @@ class AnalysisResponse(BaseModel):
     root_cause: str
     evidence: list[str]
     remediation_steps: list[str]
+
+
+def analyze_log(log_text: str) -> AnalysisResponse:
+    """Stub implementation — replaced by real OpenAI call in WO-010."""
+    return AnalysisResponse(
+        root_cause="Stub: NullPointerException in Service.process() at Service.java:42",
+        evidence=[
+            "Stack trace originates at Service.java line 42",
+            "No null guard before method invocation on the injected dependency",
+        ],
+        remediation_steps=[
+            "Add a null check before calling process()",
+            "Verify dependency injection configuration in Main.java",
+        ],
+    )
+
+
+@app.post("/analyze", response_model=AnalysisResponse)
+async def analyze(request: LogRequest) -> AnalysisResponse:
+    return analyze_log(request.log)

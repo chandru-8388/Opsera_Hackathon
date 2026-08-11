@@ -43,6 +43,76 @@ def test_cors_options_preflight_returns_allow_origin():
     assert response.headers["access-control-allow-origin"] == "*"
 
 
+# ── POST /analyze endpoint integration tests ───────────────────────────────
+
+def test_analyze_valid_request_returns_200():
+    response = client.post("/analyze", json={"log": "java.lang.NullPointerException at Main.java:42"})
+    assert response.status_code == 200
+
+
+def test_analyze_response_content_type_is_json():
+    response = client.post("/analyze", json={"log": "ERROR: connection refused"})
+    assert response.status_code == 200
+    assert "application/json" in response.headers["content-type"]
+
+
+def test_analyze_response_has_required_fields():
+    response = client.post("/analyze", json={"log": "ERROR: timeout after 30s"})
+    assert response.status_code == 200
+    data = response.json()
+    assert "root_cause" in data
+    assert "evidence" in data
+    assert "remediation_steps" in data
+
+
+def test_analyze_response_fields_correct_types():
+    response = client.post("/analyze", json={"log": "ERROR: out of memory"})
+    assert response.status_code == 200
+    data = response.json()
+    assert isinstance(data["root_cause"], str)
+    assert isinstance(data["evidence"], list)
+    assert isinstance(data["remediation_steps"], list)
+
+
+def test_analyze_response_deserializes_to_analysis_response():
+    response = client.post("/analyze", json={"log": "FATAL: disk full"})
+    assert response.status_code == 200
+    result = AnalysisResponse(**response.json())
+    assert result.root_cause
+    assert isinstance(result.evidence, list)
+    assert isinstance(result.remediation_steps, list)
+
+
+def test_analyze_empty_log_returns_422():
+    response = client.post("/analyze", json={"log": ""})
+    assert response.status_code == 422
+
+
+def test_analyze_whitespace_only_log_returns_422():
+    response = client.post("/analyze", json={"log": "   "})
+    assert response.status_code == 422
+
+
+def test_analyze_missing_log_field_returns_422():
+    response = client.post("/analyze", json={})
+    assert response.status_code == 422
+
+
+def test_analyze_422_contains_validation_detail():
+    response = client.post("/analyze", json={"log": ""})
+    assert response.status_code == 422
+    data = response.json()
+    assert "detail" in data
+
+
+def test_analyze_appears_in_openapi_spec():
+    response = client.get("/openapi.json")
+    assert response.status_code == 200
+    paths = response.json().get("paths", {})
+    assert "/analyze" in paths
+    assert "post" in paths["/analyze"]
+
+
 # ── Fixtures ───────────────────────────────────────────────────────────────
 
 INVALID_INPUTS = [
