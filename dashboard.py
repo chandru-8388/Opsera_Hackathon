@@ -23,3 +23,17 @@ if st.button("Analyze"):
     if not is_valid_input(log_text):
         st.warning("Please paste a log snippet")
         st.stop()
+    if log_text != st.session_state.get("last_log", ""):
+        st.session_state.pop("last_result", None)
+    response = requests.post(
+        f"{BACKEND_URL}/analyze",
+        json={"log": log_text},
+        timeout=30,
+    )
+    if response.status_code == 200:
+        result = response.json()
+        st.session_state["last_result"] = result
+        st.session_state["last_log"] = log_text
+
+if "last_result" in st.session_state:
+    result = st.session_state["last_result"]

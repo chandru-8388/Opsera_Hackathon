@@ -84,3 +84,10 @@
 - **Files:** 3 (+163/-1)
 - **Duration:** 291ss
 - **Approach:** Added SYSTEM_PROMPT as a module-level string constant to app.py between the OpenAI client initialization and the LogRequest model. The prompt follows the required 5-part structure: (1) SRE expert role assignment, (2) task description, (3) systematic step-by-step reasoning with 4 numbered steps, (4) evidence-citing requirement specifying log lines/codes/class names, (5) grounding constraint prohibiting speculation. Prompt is ~319 estimated tokens (well under the 500-token limit) and contains no JSON/schema references. Created test_fixtures.py with three realistic committed log samples. Added 16 tests to test_models.py covering all prompt structure requirements and fixture validity.
+
+## WO-014: User Story: WO-014 - Backend API Call with Session State Caching
+- **Status:** completed
+- **Commit:** `9c7da89`
+- **Files:** 2 (+156/-0)
+- **Duration:** 413ss
+- **Approach:** Added requests.post() call inside the st.button('Analyze') block in dashboard.py, after input validation passes. Cache invalidation logic compares log_text against st.session_state.get('last_log', '') and pops 'last_result' from session state when the input has changed. On HTTP 200, the parsed response dict is stored under st.session_state['last_result'] and the submitted text under st.session_state['last_log']. A bare 'if last_result in st.session_state' block at the bottom of the script retrieves the cached result for display by subsequent WOs. Created test_dashboard_api.py with 13 unit tests that mock both streamlit (via sys.modules patch) and requests.post (via unittest.mock.patch) to verify URL, JSON payload, timeout, session state storage, cache invalidation, and mock fixture schema.
