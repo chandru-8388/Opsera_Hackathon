@@ -119,3 +119,10 @@
 - **Files:** 2 (+189/-2)
 - **Duration:** 197ss
 - **Approach:** Added APITimeoutError, RateLimitError, AuthenticationError, and APIError imports to app.py from the openai package. Wrapped the analyze_log() call in the POST /analyze endpoint with a try/except block containing 6 clauses in order: HTTPException (re-raise — lets refusal/None-parsed 502s from analyze_log pass through unchanged), APITimeoutError, RateLimitError, AuthenticationError, APIError, and generic Exception. Each OpenAI-specific clause raises HTTPException(502) with the exact static message from the acceptance criteria. All detail strings are static — no exception message, API key, or stack trace is ever included. Created test_exception_handlers.py with 15 tests using patch('app.analyze_log', side_effect=exc) to simulate each exception type through the real FastAPI endpoint.
+
+## WO-017: User Story: WO-017 - Sanity Test Valid Log Returns Schema-Conformant Response
+- **Status:** completed
+- **Commit:** `389a9d3`
+- **Files:** 1 (+64/-1)
+- **Duration:** 122ss
+- **Approach:** Added VALID_LOG_FIXTURE (15-line Java NullPointerException stack trace with Caused By chain) and five happy-path tests to the existing test_app.py created in WO-018. Imported AnalysisResponse and ValidationError at the top of the file. The primary test test_analyze_valid_log_returns_200_with_schema POSTs the fixture to /analyze via TestClient, asserts HTTP 200, deserializes with AnalysisResponse(**data), and asserts non-empty root_cause, len(evidence)>=1, and len(remediation_steps)>=1. Four supporting tests verify required keys presence, string element types, and explicit Pydantic validation without raising ValidationError. The conftest.py autouse fixture patches app.client so these tests run reliably without a real OpenAI API key.
