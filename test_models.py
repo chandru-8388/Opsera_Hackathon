@@ -1,9 +1,46 @@
-"""Unit tests for LogRequest and AnalysisResponse Pydantic models (app.py)."""
+"""Unit tests for Pydantic models and FastAPI app configuration (app.py)."""
 
 import pytest
+from fastapi.testclient import TestClient
 from pydantic import ValidationError
 
-from app import AnalysisResponse, LogRequest
+from app import AnalysisResponse, LogRequest, app
+
+# ── FastAPI app integration tests ──────────────────────────────────────────
+
+client = TestClient(app)
+
+
+def test_docs_returns_200():
+    response = client.get("/docs")
+    assert response.status_code == 200
+    assert "text/html" in response.headers["content-type"]
+
+
+def test_openapi_json_has_correct_title():
+    response = client.get("/openapi.json")
+    assert response.status_code == 200
+    data = response.json()
+    assert data["info"]["title"] == "Log Analyzer"
+
+
+def test_openapi_json_has_description():
+    response = client.get("/openapi.json")
+    assert response.status_code == 200
+    data = response.json()
+    assert data["info"]["description"]
+
+
+def test_cors_options_preflight_returns_allow_origin():
+    response = client.options(
+        "/analyze",
+        headers={
+            "Origin": "http://localhost:8501",
+            "Access-Control-Request-Method": "POST",
+        },
+    )
+    assert "access-control-allow-origin" in response.headers
+    assert response.headers["access-control-allow-origin"] == "*"
 
 
 # ── Fixtures ───────────────────────────────────────────────────────────────
