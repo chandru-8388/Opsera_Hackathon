@@ -91,3 +91,10 @@
 - **Files:** 2 (+156/-0)
 - **Duration:** 413ss
 - **Approach:** Added requests.post() call inside the st.button('Analyze') block in dashboard.py, after input validation passes. Cache invalidation logic compares log_text against st.session_state.get('last_log', '') and pops 'last_result' from session state when the input has changed. On HTTP 200, the parsed response dict is stored under st.session_state['last_result'] and the submitted text under st.session_state['last_log']. A bare 'if last_result in st.session_state' block at the bottom of the script retrieves the cached result for display by subsequent WOs. Created test_dashboard_api.py with 13 unit tests that mock both streamlit (via sys.modules patch) and requests.post (via unittest.mock.patch) to verify URL, JSON payload, timeout, session state storage, cache invalidation, and mock fixture schema.
+
+## WO-018: User Story: WO-018 - Sanity Test Empty Log Returns HTTP 422 Error
+- **Status:** completed
+- **Commit:** `60c23e2`
+- **Files:** 1 (+64/-0)
+- **Duration:** 136ss
+- **Approach:** Created test_app.py in the project root with the two required sanity test functions (test_analyze_empty_log_returns_422 and test_analyze_whitespace_log_returns_422) plus five additional edge-case tests. Both primary tests use TestClient(app) to POST to /analyze with the fixture constants EMPTY_LOG_FIXTURE='' and WHITESPACE_LOG_FIXTURE='   \t\n  ', assert HTTP 422, and verify the detail array contains 'Log snippet must not be empty'. No OPENAI_API_KEY is exercised — Pydantic's field_validator rejects invalid input before any business logic runs. The existing conftest.py setdefault ensures the module-level OpenAI client init does not raise during TestClient setup.
