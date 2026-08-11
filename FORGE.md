@@ -105,3 +105,10 @@
 - **Files:** 3 (+222/-12)
 - **Duration:** 370ss
 - **Approach:** Replaced the stub analyze_log function in app.py with the real OpenAI implementation using client.beta.chat.completions.parse(model='gpt-4o-mini', messages=[system+user], response_format=AnalysisResponse). Added refusal check (message.refusal is not None → HTTPException 502) and defensive None check (message.parsed is None → HTTPException 502), then returns message.parsed. Updated conftest.py with an autouse fixture that patches app.client for every test to prevent real API calls — existing endpoint tests in test_models.py and test_app.py continue passing with the stub completion. Created test_analyze.py with 11 tests (8 unit + 2 mocked endpoint + 1 live integration). Unit tests import analyze_log directly (bypassing the conftest autouse patch on app.analyze_log) and use 'with patch("app.client")' to control exact completion shapes.
+
+## WO-015: User Story: WO-015 - Structured Result Rendering with Labeled Sections
+- **Status:** completed
+- **Commit:** `99c7a19`
+- **Files:** 2 (+177/-1)
+- **Duration:** 129ss
+- **Approach:** Added a render_results(result: dict) helper function to dashboard.py that renders three labeled sections using Streamlit native components: st.subheader('Root Cause') + st.markdown(result['root_cause']), st.subheader('Evidence') + a loop calling st.markdown(f'- {item}') for each evidence string, and st.subheader('Remediation Steps') + an enumerate loop calling st.markdown(f'{i}. {step}'). Replaced the bare result retrieval at the bottom of dashboard.py with a call to render_results(st.session_state['last_result']). Created test_dashboard_render.py with 14 unit tests that import render_results directly (with streamlit mocked at module level) and assert on st.subheader and st.markdown call arguments.

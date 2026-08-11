@@ -11,6 +11,17 @@ def is_valid_input(text: str) -> bool:
     return bool(text.strip())
 
 
+def render_results(result: dict) -> None:
+    st.subheader("Root Cause")
+    st.markdown(result["root_cause"])
+    st.subheader("Evidence")
+    for item in result["evidence"]:
+        st.markdown(f"- {item}")
+    st.subheader("Remediation Steps")
+    for i, step in enumerate(result["remediation_steps"], 1):
+        st.markdown(f"{i}. {step}")
+
+
 st.title("AI Log Analyzer")
 
 log_text = st.text_area(
@@ -36,4 +47,4 @@ if st.button("Analyze"):
         st.session_state["last_log"] = log_text
 
 if "last_result" in st.session_state:
-    result = st.session_state["last_result"]
+    render_results(st.session_state["last_result"])
