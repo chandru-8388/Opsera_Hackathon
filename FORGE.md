@@ -35,3 +35,10 @@
 - **Files:** 2 (+97/-0)
 - **Duration:** 128ss
 - **Approach:** Created app.py with LogRequest(BaseModel) using Pydantic v2 syntax. The @field_validator('log', mode='before') classmethod strips the value to check for emptiness but returns the original unstripped value to preserve input. Created test_models.py with 10 test cases: 4 explicit invalid-input tests (empty, spaces, newline, tab), 1 parametrized batch over 5 INVALID_INPUTS fixtures, 4 explicit valid-input tests (single-line, multiline, whitespace-preserved, 10KB+ length), and 1 parametrized batch over 4 VALID_INPUTS fixtures.
+
+## WO-005: User Story: WO-005 - Define AnalysisResponse Pydantic Model for Structured Output
+- **Status:** completed
+- **Commit:** `29de2eb`
+- **Files:** 2 (+147/-2)
+- **Duration:** 129ss
+- **Approach:** Added AnalysisResponse(BaseModel) to app.py immediately after LogRequest. Three required fields use Python 3.10+ built-in list[str] syntax with no Optional, no Union types, and no custom validators — matching OpenAI structured output constraints exactly. Extended test_models.py with 14 new test functions plus two realistic module-level fixture instances (NPE_ANALYSIS and TIMEOUT_ANALYSIS) for reuse in downstream tests.
