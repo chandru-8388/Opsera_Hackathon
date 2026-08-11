@@ -5,7 +5,9 @@ empty and whitespace-only submissions with HTTP 422. No OpenAI API call is
 made — requests are rejected at the validation layer before any business logic.
 """
 
+import re
 import time
+from pathlib import Path
 
 import pytest
 from fastapi.testclient import TestClient
@@ -304,3 +306,64 @@ def test_analyze_round_trip_under_15_seconds():
 #
 # 10. Repeat steps 4–9 twice more to confirm consistency across 3 runs.
 #     All 3 runs must complete under 15 seconds with non-empty, specific output.
+
+
+# ── Security posture tests (WO-022) ───────────────────────────────────────
+
+# Source files in the production 3-file constraint.
+_SOURCE_FILES = [Path("app.py"), Path("dashboard.py"), Path("requirements.txt")]
+
+# Matches a quoted OpenAI API key (real keys are 51+ chars; 20 is a safe lower bound
+# that avoids false positives on short package names or documentation snippets).
+_API_KEY_PATTERN = re.compile(r"""['"]sk-[a-zA-Z0-9_-]{20,}['"]""")
+
+
+def test_no_hardcoded_api_key():
+    for path in _SOURCE_FILES:
+        content = path.read_text()
+        matches = _API_KEY_PATTERN.findall(content)
+        assert not matches, (
+            f"{path} contains a hardcoded API key pattern: {matches}"
+        )
+
+
+def test_dashboard_no_api_key_reference():
+    content = Path("dashboard.py").read_text()
+    assert "OPENAI_API_KEY" not in content, (
+        "dashboard.py must not reference OPENAI_API_KEY — key access belongs in the backend only"
+    )
+    assert "os.environ" not in content, (
+        "dashboard.py must not access os.environ — key access belongs in the backend only"
+    )
+    assert "os.getenv" not in content, (
+        "dashboard.py must not call os.getenv — key access belongs in the backend only"
+    )
+
+
+def test_empty_log_error_contains_no_secrets():
+    response = client.post("/analyze", json={"log": ""})
+    assert response.status_code == 422
+    body_text = response.text
+    assert "Traceback" not in body_text, (
+        "Error response must not contain a Python traceback"
+    )
+    assert 'File "' not in body_text, (
+        "Error response must not contain file path references from a traceback"
+    )
+    assert "sk-" not in body_text, (
+        "Error response must not contain any API key pattern"
+    )
+    assert "OPENAI_API_KEY" not in body_text, (
+        "Error response must not reference the API key environment variable name"
+    )
+
+
+def test_error_response_format():
+    response = client.post("/analyze", json={"log": ""})
+    assert response.status_code == 422
+    body = response.json()
+    assert "detail" in body, "422 response must contain a 'detail' field"
+    detail_str = str(body["detail"])
+    assert any(word in detail_str.lower() for word in ("empty", "log", "snippet")), (
+        f"Error message must be human-readable; got: {detail_str!r}"
+    )
