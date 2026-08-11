@@ -1,5 +1,8 @@
+import os
+
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from openai import OpenAI
 from pydantic import BaseModel, field_validator
 
 app = FastAPI(
@@ -16,6 +19,9 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Fail fast at startup if the API key is not configured — never hardcode it.
+client = OpenAI(api_key=os.environ["OPENAI_API_KEY"])
 
 
 class LogRequest(BaseModel):

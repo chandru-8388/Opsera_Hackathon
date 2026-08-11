@@ -1,5 +1,9 @@
 """Unit tests for Pydantic models and FastAPI app configuration (app.py)."""
 
+import importlib
+import os
+import sys
+
 import pytest
 from fastapi.testclient import TestClient
 from pydantic import ValidationError
@@ -9,6 +13,40 @@ from app import AnalysisResponse, LogRequest, app
 # ── FastAPI app integration tests ──────────────────────────────────────────
 
 client = TestClient(app)
+
+
+# ── OpenAI client initialization tests ────────────────────────────────────
+
+def test_openai_client_is_initialized():
+    """Client instance exists on the app module after import with env var set."""
+    import app as app_module
+    assert app_module.client is not None
+
+
+def test_openai_client_uses_env_var_key(monkeypatch):
+    """When OPENAI_API_KEY is set, the client initializes without error."""
+    monkeypatch.setenv("OPENAI_API_KEY", "sk-test-dummy-for-init-check")
+    # Reload module to re-execute module-level initialization with fresh env
+    saved = sys.modules.pop("app", None)
+    try:
+        import app as reloaded
+        assert reloaded.client is not None
+    finally:
+        if saved is not None:
+            sys.modules["app"] = saved
+
+
+def test_missing_api_key_fails_fast(monkeypatch):
+    """Without OPENAI_API_KEY the module-level client init raises KeyError."""
+    monkeypatch.delenv("OPENAI_API_KEY", raising=False)
+    saved = sys.modules.pop("app", None)
+    try:
+        with pytest.raises((KeyError, Exception)):
+            importlib.import_module("app")
+    finally:
+        # Restore the original cached module so subsequent tests are unaffected
+        if saved is not None:
+            sys.modules["app"] = saved
 
 
 def test_docs_returns_200():

@@ -70,3 +70,10 @@
 - **Files:** 2 (+91/-1)
 - **Duration:** 86ss
 - **Approach:** Added HTTPException to the fastapi import, defined a stub analyze_log(log_text: str) -> AnalysisResponse function returning hardcoded realistic data, and registered @app.post('/analyze', response_model=AnalysisResponse) with an async handler that delegates to analyze_log(request.log). Added 10 TestClient integration tests to test_models.py covering all required acceptance criteria. The stub is clearly marked for replacement by WO-010.
+
+## WO-008: User Story: WO-008 - Initialize OpenAI Client from Environment Variable
+- **Status:** completed
+- **Commit:** `66a245a`
+- **Files:** 3 (+54/-0)
+- **Duration:** 434ss
+- **Approach:** Added 'import os' and 'from openai import OpenAI' to app.py. Placed 'client = OpenAI(api_key=os.environ["OPENAI_API_KEY"])' at module level after the CORS middleware block with a security comment. Using bracket notation (not .get()) guarantees KeyError at import/startup time if the key is absent — true fail-fast. Created conftest.py that calls os.environ.setdefault at module level (outside any fixture) so the dummy key is present before any test file's top-level 'from app import ...' fires. Added 3 tests to test_models.py covering: client exists on module, client re-initializes with env var set, and module reload without key raises.
