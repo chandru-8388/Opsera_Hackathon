@@ -1,3 +1,73 @@
+# =============================================================================
+# AI Log Analyzer — Hackathon Demo
+# FastAPI backend + Streamlit frontend + OpenAI GPT-4o-mini structured outputs
+# 3-file project: app.py (backend), dashboard.py (frontend), requirements.txt
+# =============================================================================
+#
+# PREREQUISITES
+# -------------
+# Python 3.10+ required (Pydantic v2 uses list[str] and str | None type syntax).
+# Python 3.11+ recommended for improved performance.
+# Check your version: python --version
+#
+# SETUP STEPS
+# -----------
+# 1. Create a virtual environment:
+#      Unix/macOS:  python -m venv venv && source venv/bin/activate
+#      Windows:     python -m venv venv && venv\Scripts\activate
+#
+# 2. Set the OpenAI API key (required before starting the backend):
+#      Unix/macOS:  export OPENAI_API_KEY=<your-api-key>
+#      Windows:     set OPENAI_API_KEY=<your-api-key>
+#
+# 3. Install dependencies:
+#      pip install -r requirements.txt
+#
+# API KEY SECURITY RULES
+# ----------------------
+# - NEVER hardcode the API key in app.py, dashboard.py, or any source file
+# - NEVER log the key to console output, files, or any output stream
+# - NEVER display the key in the Streamlit UI or Swagger documentation
+# - NEVER include the key in error responses returned to the client
+# - Set the key BEFORE opening a terminal window to a live demo audience
+#
+# STARTUP COMMANDS (two separate terminal windows required)
+# ---------------------------------------------------------
+# Terminal 1 — FastAPI backend (binds to http://localhost:8000):
+#      uvicorn app:app --reload
+#
+# Terminal 2 — Streamlit frontend (binds to http://localhost:8501):
+#      streamlit run dashboard.py
+#
+# VERIFICATION
+# ------------
+# Dashboard UI:  http://localhost:8501
+# Swagger UI:    http://localhost:8000/docs
+# OpenAPI spec:  http://localhost:8000/openapi.json
+#
+# TROUBLESHOOTING
+# ---------------
+# Python version too old:
+#   python --version shows < 3.10 → install Python 3.10+ and recreate the venv
+#
+# OPENAI_API_KEY not set:
+#   Backend crashes at startup with KeyError → run the export/set command above
+#
+# Port already in use (8000 or 8501):
+#   Unix: lsof -i :8000 | grep LISTEN, then kill <PID>
+#   Or use --port flag: uvicorn app:app --reload --port 8001
+#
+# Windows uvloop note:
+#   uvicorn[standard] includes uvloop which is Unix-only. On Windows, uvicorn
+#   automatically falls back to the asyncio event loop — no action required.
+#
+# Network restricted environment (pre-install before the event):
+#   pip download -r requirements.txt -d ./packages
+#   pip install --no-index --find-links ./packages -r requirements.txt
+#
+# =============================================================================
+# Dependencies
+# =============================================================================
 fastapi>=0.100.0
 uvicorn[standard]>=0.23.0
 streamlit>=1.28.0
