@@ -2,7 +2,7 @@ import os
 
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from openai import OpenAI
+from openai import APIError, APITimeoutError, AuthenticationError, OpenAI, RateLimitError
 from pydantic import BaseModel, field_validator
 
 app = FastAPI(
@@ -87,4 +87,32 @@ def analyze_log(log_text: str) -> AnalysisResponse:
 
 @app.post("/analyze", response_model=AnalysisResponse)
 async def analyze(request: LogRequest) -> AnalysisResponse:
-    return analyze_log(request.log)
+    try:
+        return analyze_log(request.log)
+    except HTTPException:
+        raise  # refusal / None-parsed 502s from analyze_log pass through unchanged
+    except APITimeoutError:
+        raise HTTPException(
+            status_code=502,
+            detail="OpenAI API timeout: the request exceeded the time limit. Please try again.",
+        )
+    except RateLimitError:
+        raise HTTPException(
+            status_code=502,
+            detail="Rate limit exceeded. Please wait a moment and try again.",
+        )
+    except AuthenticationError:
+        raise HTTPException(
+            status_code=502,
+            detail="Authentication failed. Please verify your OpenAI API key.",
+        )
+    except APIError:
+        raise HTTPException(
+            status_code=502,
+            detail="OpenAI service error. Please try again later.",
+        )
+    except Exception:
+        raise HTTPException(
+            status_code=502,
+            detail="An unexpected error occurred. Please try again.",
+        )

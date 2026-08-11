@@ -112,3 +112,10 @@
 - **Files:** 2 (+177/-1)
 - **Duration:** 129ss
 - **Approach:** Added a render_results(result: dict) helper function to dashboard.py that renders three labeled sections using Streamlit native components: st.subheader('Root Cause') + st.markdown(result['root_cause']), st.subheader('Evidence') + a loop calling st.markdown(f'- {item}') for each evidence string, and st.subheader('Remediation Steps') + an enumerate loop calling st.markdown(f'{i}. {step}'). Replaced the bare result retrieval at the bottom of dashboard.py with a call to render_results(st.session_state['last_result']). Created test_dashboard_render.py with 14 unit tests that import render_results directly (with streamlit mocked at module level) and assert on st.subheader and st.markdown call arguments.
+
+## WO-011: User Story: WO-011 - Add OpenAI Exception Handlers Returning HTTP 502
+- **Status:** completed
+- **Commit:** `2c5993e`
+- **Files:** 2 (+189/-2)
+- **Duration:** 197ss
+- **Approach:** Added APITimeoutError, RateLimitError, AuthenticationError, and APIError imports to app.py from the openai package. Wrapped the analyze_log() call in the POST /analyze endpoint with a try/except block containing 6 clauses in order: HTTPException (re-raise — lets refusal/None-parsed 502s from analyze_log pass through unchanged), APITimeoutError, RateLimitError, AuthenticationError, APIError, and generic Exception. Each OpenAI-specific clause raises HTTPException(502) with the exact static message from the acceptance criteria. All detail strings are static — no exception message, API key, or stack trace is ever included. Created test_exception_handlers.py with 15 tests using patch('app.analyze_log', side_effect=exc) to simulate each exception type through the real FastAPI endpoint.
