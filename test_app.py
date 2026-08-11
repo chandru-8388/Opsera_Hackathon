@@ -5,6 +5,8 @@ empty and whitespace-only submissions with HTTP 422. No OpenAI API call is
 made — requests are rejected at the validation layer before any business logic.
 """
 
+import time
+
 import pytest
 from fastapi.testclient import TestClient
 from pydantic import ValidationError
@@ -247,3 +249,58 @@ def test_hero_snippet_quality():
         assert len(result.remediation_steps) >= 2, (
             f"[run {run}] expected >= 2 remediation steps, got {len(result.remediation_steps)}"
         )
+
+
+# ── End-to-end round-trip latency test (WO-021) ───────────────────────────
+
+def test_analyze_round_trip_under_15_seconds():
+    start = time.time()
+    response = client.post("/analyze", json={"log": HERO_LOG_SNIPPET})
+    elapsed = time.time() - start
+    print(f"\nRound-trip latency: {elapsed:.2f}s")
+    assert response.status_code == 200, f"Expected HTTP 200, got {response.status_code}"
+    data = response.json()
+    result = AnalysisResponse(**data)
+    assert len(result.root_cause) > 0, "root_cause must not be empty"
+    assert len(result.evidence) >= 1, "evidence list must not be empty"
+    assert len(result.remediation_steps) >= 1, "remediation_steps list must not be empty"
+    assert elapsed < 15.0, (
+        f"Round-trip took {elapsed:.2f}s, exceeding the 15s latency budget"
+    )
+
+
+# ── Manual E2E verification checklist ─────────────────────────────────────
+#
+# Run this checklist once before each live demo with both services running
+# and a real OPENAI_API_KEY set.
+#
+#  1. Terminal 1 — start FastAPI backend:
+#       uvicorn app:app --reload
+#     Confirm: "Application startup complete" and no KeyError for OPENAI_API_KEY
+#
+#  2. Terminal 2 — start Streamlit frontend:
+#       streamlit run dashboard.py
+#     Confirm: browser opens to http://localhost:8501
+#
+#  3. In the browser, verify the page title "AI Log Analyzer" and text area
+#     placeholder text are visible.
+#
+#  4. Paste the HERO_LOG_SNIPPET (payment service NPE above) into the text area.
+#
+#  5. Click the "Analyze" button and start a stopwatch.
+#
+#  6. Verify a "Root Cause" subheader appears with a specific, non-generic
+#     description that references PaymentService or PaymentMethod.
+#
+#  7. Verify an "Evidence" subheader appears with a bulleted list of at least
+#     2 items that cite actual log content (class names, line numbers, or the
+#     transaction ID TXN-20240402-8847).
+#
+#  8. Verify a "Remediation Steps" subheader appears with a numbered list of
+#     at least 2 actionable steps (not generic advice).
+#
+#  9. Stop the stopwatch when results are fully rendered.
+#     Target: total time from click to rendered results < 15 seconds.
+#
+# 10. Repeat steps 4–9 twice more to confirm consistency across 3 runs.
+#     All 3 runs must complete under 15 seconds with non-empty, specific output.

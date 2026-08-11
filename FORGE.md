@@ -147,3 +147,10 @@
 - **Files:** 1 (+53/-0)
 - **Duration:** 162ss
 - **Approach:** Selected JAVA_STACK_TRACE_FIXTURE (payment service NullPointerException) as the hero snippet based on four criteria: (1) specificity — contains a named transaction ID (TXN-20240402-8847), user ID (userId=44219), and exact class+line references that GPT-4o-mini cites verbatim; (2) causal chain — the NPE at chargeCard→Caused By IllegalStateException at PaymentRepository.findActiveByUserId gives the LLM a clear root cause to identify; (3) domain resonance — payments is universally understood by demo audiences; (4) demo ergonomics — 15 lines fit comfortably in a paste operation. Defined HERO_LOG_SNIPPET with a 10-line comment block documenting the selection rationale, then added test_hero_snippet_quality which loops 3 times through POST /analyze via TestClient, asserts HTTP 200 + valid AnalysisResponse, enforces root_cause >= 30 chars / evidence >= 2 / remediation_steps >= 2, and prints root_cause and evidence[0] per iteration for visual quality review with pytest -s.
+
+## WO-021: User Story: WO-021 - End-to-End Round-Trip Integration Test With Latency Assertion
+- **Status:** completed
+- **Commit:** `4c79bcb`
+- **Files:** 1 (+57/-0)
+- **Duration:** 131ss
+- **Approach:** Added 'import time' at the top of test_app.py alongside existing imports. Wrote test_analyze_round_trip_under_15_seconds which records start = time.time(), sends HERO_LOG_SNIPPET to POST /analyze via TestClient, records elapsed = time.time() - start, prints 'Round-trip latency: {elapsed:.2f}s', asserts HTTP 200, validates AnalysisResponse schema (non-empty root_cause, evidence >= 1, remediation_steps >= 1), and asserts elapsed < 15.0 with a descriptive failure message. Appended a 10-step manual E2E verification checklist as a comment block covering service startup (uvicorn + streamlit), hero snippet paste, result rendering verification (Root Cause header, bulleted Evidence, numbered Remediation Steps, specific content referencing PaymentService/TXN-20240402-8847), stopwatch timing, and 3-run consistency confirmation.
