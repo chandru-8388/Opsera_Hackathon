@@ -87,6 +87,38 @@ PERMISSION_ERROR_FIXTURE = """\
 """
 
 
+# ── Hero snippet for live demo (WO-020) ───────────────────────────────────
+#
+# Selected: JAVA_STACK_TRACE_FIXTURE (payment service NullPointerException)
+#
+# Rationale: The payment NPE produces the most specific and impressive analysis
+# of the three fixtures. It contains a clear causal chain (NPE at chargeCard →
+# Caused By IllegalStateException at PaymentRepository.findActiveByUserId),
+# a unique transaction ID (TXN-20240402-8847) and user ID (userId=44219) that
+# the LLM cites verbatim as evidence, and a business-critical domain (payments)
+# that resonates with any demo audience. At 15 lines it is quick to paste and
+# the multi-level stack trace gives GPT-4o-mini rich context to produce
+# actionable, non-generic remediation steps.
+
+HERO_LOG_SNIPPET = """\
+2024-04-02 09:15:33.412 ERROR [http-nio-8080-exec-3] c.e.p.PaymentService - Payment processing failed for transaction TXN-20240402-8847
+java.lang.NullPointerException: Cannot invoke "com.example.model.PaymentMethod.getToken()" because "paymentMethod" is null
+    at com.example.payment.PaymentService.chargeCard(PaymentService.java:143)
+    at com.example.payment.PaymentService.processPayment(PaymentService.java:89)
+    at com.example.api.PaymentController.createCharge(PaymentController.java:56)
+    at sun.reflect.NativeMethodAccessorImpl.invoke0(Native Method)
+    at sun.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:62)
+    at java.lang.reflect.Method.invoke(Method.java:498)
+    at org.springframework.web.servlet.FrameworkServlet.processRequest(FrameworkServlet.java:1014)
+Caused by: java.lang.IllegalStateException: PaymentMethod not found for userId=44219
+    at com.example.repository.PaymentRepository.findActiveByUserId(PaymentRepository.java:67)
+    at com.example.payment.PaymentService.loadPaymentMethod(PaymentService.java:201)
+    ... 8 more
+2024-04-02 09:15:33.413 WARN  [http-nio-8080-exec-3] c.e.p.PaymentService - Transaction TXN-20240402-8847 marked FAILED; no charge issued
+2024-04-02 09:15:33.414 ERROR [http-nio-8080-exec-3] c.e.a.PaymentController - Returning HTTP 500 for userId=44219
+"""
+
+
 # ── Happy path: valid log returns 200 with schema-conformant response ─────
 
 def test_analyze_valid_log_returns_200_with_schema():
@@ -194,3 +226,24 @@ def test_analyze_quality_across_log_types(log_fixture, label):
     assert len(result.root_cause) >= 20, f"[{label}] root_cause too short: {result.root_cause!r}"
     assert len(result.evidence) >= 2, f"[{label}] expected >= 2 evidence items, got {len(result.evidence)}"
     assert len(result.remediation_steps) >= 2, f"[{label}] expected >= 2 remediation steps, got {len(result.remediation_steps)}"
+
+
+# ── Hero snippet consistency test (WO-020) ────────────────────────────────
+
+def test_hero_snippet_quality():
+    for run in range(1, 4):
+        response = client.post("/analyze", json={"log": HERO_LOG_SNIPPET})
+        assert response.status_code == 200, f"[run {run}] expected 200, got {response.status_code}"
+        data = response.json()
+        result = AnalysisResponse(**data)
+        print(f"\n[run {run}] root_cause: {result.root_cause}")
+        print(f"[run {run}] evidence[0]: {result.evidence[0]}")
+        assert len(result.root_cause) >= 30, (
+            f"[run {run}] root_cause too short ({len(result.root_cause)} chars): {result.root_cause!r}"
+        )
+        assert len(result.evidence) >= 2, (
+            f"[run {run}] expected >= 2 evidence items, got {len(result.evidence)}"
+        )
+        assert len(result.remediation_steps) >= 2, (
+            f"[run {run}] expected >= 2 remediation steps, got {len(result.remediation_steps)}"
+        )

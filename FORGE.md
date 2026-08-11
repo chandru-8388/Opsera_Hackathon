@@ -140,3 +140,10 @@
 - **Files:** 2 (+226/-11)
 - **Duration:** 415ss
 - **Approach:** Added comprehensive error handling to dashboard.py by wrapping the requests.post call in a try/except block. Extracted two helper functions: handle_http_error(response) dispatches on status code (422, 502, other) and handle_network_error(exc) dispatches on exception type (ConnectionError, Timeout, RequestException). The HTTP 200 path wraps response.json() in a nested try/except for JSONDecodeError. Every error path calls st.error() with a user-friendly static message followed by st.stop() to prevent downstream rendering. Added 'import json' for JSONDecodeError. Created test_dashboard_errors.py with 22 unit tests using the sys.modules mock pattern (same as test_dashboard_api.py) — each test uses _run_dashboard_error() to re-import dashboard with mocked streamlit and a controlled requests.post side_effect or mock response.
+
+## WO-020: User Story: WO-020 - Select and Document Hero Log Snippet for Demo
+- **Status:** completed
+- **Commit:** `cd4910a`
+- **Files:** 1 (+53/-0)
+- **Duration:** 162ss
+- **Approach:** Selected JAVA_STACK_TRACE_FIXTURE (payment service NullPointerException) as the hero snippet based on four criteria: (1) specificity — contains a named transaction ID (TXN-20240402-8847), user ID (userId=44219), and exact class+line references that GPT-4o-mini cites verbatim; (2) causal chain — the NPE at chargeCard→Caused By IllegalStateException at PaymentRepository.findActiveByUserId gives the LLM a clear root cause to identify; (3) domain resonance — payments is universally understood by demo audiences; (4) demo ergonomics — 15 lines fit comfortably in a paste operation. Defined HERO_LOG_SNIPPET with a 10-line comment block documenting the selection rationale, then added test_hero_snippet_quality which loops 3 times through POST /analyze via TestClient, asserts HTTP 200 + valid AnalysisResponse, enforces root_cause >= 30 chars / evidence >= 2 / remediation_steps >= 2, and prints root_cause and evidence[0] per iteration for visual quality review with pytest -s.
