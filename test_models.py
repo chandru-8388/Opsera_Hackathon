@@ -8,7 +8,8 @@ import pytest
 from fastapi.testclient import TestClient
 from pydantic import ValidationError
 
-from app import AnalysisResponse, LogRequest, app
+from app import SYSTEM_PROMPT, AnalysisResponse, LogRequest, app
+from test_fixtures import HERO_SNIPPET, HTTP_TIMEOUT_LOG, JAVA_NPE_LOG, PERMISSION_DENIED_LOG
 
 # ── FastAPI app integration tests ──────────────────────────────────────────
 
@@ -367,3 +368,82 @@ def test_json_schema_evidence_is_array():
 def test_json_schema_remediation_steps_is_array():
     schema = AnalysisResponse.model_json_schema()
     assert schema["properties"]["remediation_steps"]["type"] == "array"
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# SYSTEM_PROMPT tests
+# ══════════════════════════════════════════════════════════════════════════════
+
+def test_system_prompt_is_non_empty_string():
+    assert isinstance(SYSTEM_PROMPT, str)
+    assert len(SYSTEM_PROMPT) > 0
+
+
+def test_system_prompt_contains_role_instruction():
+    assert "Site Reliability Engineer" in SYSTEM_PROMPT or "SRE" in SYSTEM_PROMPT
+
+
+def test_system_prompt_contains_root_cause():
+    assert "root cause" in SYSTEM_PROMPT.lower()
+
+
+def test_system_prompt_contains_evidence_instruction():
+    assert "evidence" in SYSTEM_PROMPT.lower() or "cite" in SYSTEM_PROMPT.lower()
+
+
+def test_system_prompt_contains_remediation_instruction():
+    assert "remediation" in SYSTEM_PROMPT.lower() or "remediat" in SYSTEM_PROMPT.lower()
+
+
+def test_system_prompt_contains_chain_of_thought():
+    prompt_lower = SYSTEM_PROMPT.lower()
+    assert "step by step" in prompt_lower or "systematically" in prompt_lower
+
+
+def test_system_prompt_contains_grounding_instruction():
+    prompt_lower = SYSTEM_PROMPT.lower()
+    assert "speculate" in prompt_lower or "ground" in prompt_lower or "strictly" in prompt_lower
+
+
+def test_system_prompt_does_not_reference_json_schema():
+    """Prompt must not reference output format — structured outputs handle that."""
+    prompt_lower = SYSTEM_PROMPT.lower()
+    assert "json" not in prompt_lower
+    assert "schema" not in prompt_lower
+    assert "response_format" not in prompt_lower
+
+
+def test_system_prompt_under_500_tokens():
+    """Rough token estimate: ~0.75 tokens per character for English text."""
+    estimated_tokens = len(SYSTEM_PROMPT) / 4
+    assert estimated_tokens < 500, f"Prompt estimated at {estimated_tokens:.0f} tokens (limit 500)"
+
+
+# ── Test fixture content tests ─────────────────────────────────────────────
+
+def test_java_npe_fixture_contains_expected_content():
+    assert "NullPointerException" in JAVA_NPE_LOG
+    assert "java" in JAVA_NPE_LOG.lower()
+
+
+def test_http_timeout_fixture_contains_expected_content():
+    assert "timed out" in HTTP_TIMEOUT_LOG.lower() or "timeout" in HTTP_TIMEOUT_LOG.lower()
+    assert "Connection" in HTTP_TIMEOUT_LOG
+
+
+def test_permission_denied_fixture_contains_expected_content():
+    assert "permission" in PERMISSION_DENIED_LOG.lower() or "Failed password" in PERMISSION_DENIED_LOG
+
+
+def test_hero_snippet_is_java_npe():
+    assert HERO_SNIPPET == JAVA_NPE_LOG
+
+
+@pytest.mark.parametrize("log_fixture,label", [
+    (JAVA_NPE_LOG, "java_npe"),
+    (HTTP_TIMEOUT_LOG, "http_timeout"),
+    (PERMISSION_DENIED_LOG, "permission_denied"),
+])
+def test_fixtures_are_non_empty_strings(log_fixture, label):
+    assert isinstance(log_fixture, str), f"{label} fixture must be a string"
+    assert len(log_fixture.strip()) > 0, f"{label} fixture must not be empty"

@@ -77,3 +77,10 @@
 - **Files:** 3 (+54/-0)
 - **Duration:** 434ss
 - **Approach:** Added 'import os' and 'from openai import OpenAI' to app.py. Placed 'client = OpenAI(api_key=os.environ["OPENAI_API_KEY"])' at module level after the CORS middleware block with a security comment. Using bracket notation (not .get()) guarantees KeyError at import/startup time if the key is absent — true fail-fast. Created conftest.py that calls os.environ.setdefault at module level (outside any fixture) so the dummy key is present before any test file's top-level 'from app import ...' fires. Added 3 tests to test_models.py covering: client exists on module, client re-initializes with env var set, and module reload without key raises.
+
+## WO-009: User Story: WO-009 - Design and Implement System Prompt for RCA
+- **Status:** completed
+- **Commit:** `8760c06`
+- **Files:** 3 (+163/-1)
+- **Duration:** 291ss
+- **Approach:** Added SYSTEM_PROMPT as a module-level string constant to app.py between the OpenAI client initialization and the LogRequest model. The prompt follows the required 5-part structure: (1) SRE expert role assignment, (2) task description, (3) systematic step-by-step reasoning with 4 numbered steps, (4) evidence-citing requirement specifying log lines/codes/class names, (5) grounding constraint prohibiting speculation. Prompt is ~319 estimated tokens (well under the 500-token limit) and contains no JSON/schema references. Created test_fixtures.py with three realistic committed log samples. Added 16 tests to test_models.py covering all prompt structure requirements and fixture validity.
