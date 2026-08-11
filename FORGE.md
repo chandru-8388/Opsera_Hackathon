@@ -98,3 +98,10 @@
 - **Files:** 1 (+64/-0)
 - **Duration:** 136ss
 - **Approach:** Created test_app.py in the project root with the two required sanity test functions (test_analyze_empty_log_returns_422 and test_analyze_whitespace_log_returns_422) plus five additional edge-case tests. Both primary tests use TestClient(app) to POST to /analyze with the fixture constants EMPTY_LOG_FIXTURE='' and WHITESPACE_LOG_FIXTURE='   \t\n  ', assert HTTP 422, and verify the detail array contains 'Log snippet must not be empty'. No OPENAI_API_KEY is exercised — Pydantic's field_validator rejects invalid input before any business logic runs. The existing conftest.py setdefault ensures the module-level OpenAI client init does not raise during TestClient setup.
+
+## WO-010: User Story: WO-010 - Implement analyze_log Function with OpenAI Structured Outputs
+- **Status:** completed
+- **Commit:** `5d8184c`
+- **Files:** 3 (+222/-12)
+- **Duration:** 370ss
+- **Approach:** Replaced the stub analyze_log function in app.py with the real OpenAI implementation using client.beta.chat.completions.parse(model='gpt-4o-mini', messages=[system+user], response_format=AnalysisResponse). Added refusal check (message.refusal is not None → HTTPException 502) and defensive None check (message.parsed is None → HTTPException 502), then returns message.parsed. Updated conftest.py with an autouse fixture that patches app.client for every test to prevent real API calls — existing endpoint tests in test_models.py and test_app.py continue passing with the stub completion. Created test_analyze.py with 11 tests (8 unit + 2 mocked endpoint + 1 live integration). Unit tests import analyze_log directly (bypassing the conftest autouse patch on app.analyze_log) and use 'with patch("app.client")' to control exact completion shapes.

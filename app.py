@@ -63,18 +63,26 @@ class AnalysisResponse(BaseModel):
 
 
 def analyze_log(log_text: str) -> AnalysisResponse:
-    """Stub implementation — replaced by real OpenAI call in WO-010."""
-    return AnalysisResponse(
-        root_cause="Stub: NullPointerException in Service.process() at Service.java:42",
-        evidence=[
-            "Stack trace originates at Service.java line 42",
-            "No null guard before method invocation on the injected dependency",
+    completion = client.beta.chat.completions.parse(
+        model="gpt-4o-mini",
+        messages=[
+            {"role": "system", "content": SYSTEM_PROMPT},
+            {"role": "user", "content": log_text},
         ],
-        remediation_steps=[
-            "Add a null check before calling process()",
-            "Verify dependency injection configuration in Main.java",
-        ],
+        response_format=AnalysisResponse,
     )
+    message = completion.choices[0].message
+    if message.refusal is not None:
+        raise HTTPException(
+            status_code=502,
+            detail="The model refused to analyze this log. Please try a different log snippet.",
+        )
+    if message.parsed is None:
+        raise HTTPException(
+            status_code=502,
+            detail="Failed to parse the model response. Please try again.",
+        )
+    return message.parsed
 
 
 @app.post("/analyze", response_model=AnalysisResponse)
