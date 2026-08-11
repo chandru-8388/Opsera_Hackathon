@@ -28,3 +28,10 @@
 - **Files:** 1 (+5/-0)
 - **Duration:** 212ss
 - **Approach:** Created two local development tools: validate_deps.py (standalone validation script with 7 check categories: Python version, pip install, import checks for all 6 packages + httpx, version verification, CLI entry points) and test_dependencies.py (pytest-compatible test file with 14 individual test functions). Both files are excluded from git via .gitignore entries. The .gitignore update is the only committed change. requirements.txt required no version constraint changes — the existing pins resolve cleanly with no conflicts.
+
+## WO-004: User Story: WO-004 - Implement LogRequest Pydantic Model with Input Validation
+- **Status:** completed
+- **Commit:** `539f464`
+- **Files:** 2 (+97/-0)
+- **Duration:** 128ss
+- **Approach:** Created app.py with LogRequest(BaseModel) using Pydantic v2 syntax. The @field_validator('log', mode='before') classmethod strips the value to check for emptiness but returns the original unstripped value to preserve input. Created test_models.py with 10 test cases: 4 explicit invalid-input tests (empty, spaces, newline, tab), 1 parametrized batch over 5 INVALID_INPUTS fixtures, 4 explicit valid-input tests (single-line, multiline, whitespace-preserved, 10KB+ length), and 1 parametrized batch over 4 VALID_INPUTS fixtures.
