@@ -44,3 +44,8 @@ htmlcov/
 
 # Jupyter
 .ipynb_checkpoints/
+
+# Local development tools (not project files — 3-file constraint: app.py, dashboard.py, requirements.txt)
+validate_deps.py
+test_dependencies.py
+test_env/

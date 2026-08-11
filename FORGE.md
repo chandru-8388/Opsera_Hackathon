@@ -21,3 +21,10 @@
 - **Files:** 1 (+70/-0)
 - **Duration:** 95ss
 - **Approach:** Prepended a 70-line structured comment block to requirements.txt covering: project overview (name, description, 3-file constraint), Prerequisites (Python 3.10+ with rationale and version check command), Setup Steps (venv creation with Unix and Windows commands, OPENAI_API_KEY export, pip install), API Key Security Rules (5 rules from architecture), Startup Commands (two-terminal approach with uvicorn:8000 and streamlit:8501), Verification (browser URLs for dashboard and Swagger UI), and Troubleshooting (Python version, missing API key, port conflicts, Windows uvloop fallback, restricted network pre-install). The 6 dependency lines at the bottom remain identical to WO-001.
+
+## WO-003: User Story: WO-003 - Validate dependency installation and transitive compatibility
+- **Status:** completed
+- **Commit:** `7ad2e3e`
+- **Files:** 1 (+5/-0)
+- **Duration:** 212ss
+- **Approach:** Created two local development tools: validate_deps.py (standalone validation script with 7 check categories: Python version, pip install, import checks for all 6 packages + httpx, version verification, CLI entry points) and test_dependencies.py (pytest-compatible test file with 14 individual test functions). Both files are excluded from git via .gitignore entries. The .gitignore update is the only committed change. requirements.txt required no version constraint changes — the existing pins resolve cleanly with no conflicts.
