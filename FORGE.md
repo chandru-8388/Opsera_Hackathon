@@ -133,3 +133,10 @@
 - **Files:** 1 (+69/-0)
 - **Duration:** 211ss
 - **Approach:** Added three log fixture constants and a pytest.mark.parametrize test to the existing test_app.py. JAVA_STACK_TRACE_FIXTURE (15 lines) is a Java NullPointerException in a payment service with a Caused By IllegalStateException chain. TIMEOUT_ERROR_FIXTURE (12 lines) is a HikariCP database connection pool exhaustion with retry attempts. PERMISSION_ERROR_FIXTURE (11 lines) is a deployment pipeline failure due to write permission denial on a release directory. A single parametrized test function test_analyze_quality_across_log_types runs all three fixtures through POST /analyze via TestClient, asserts HTTP 200, validates AnalysisResponse schema, prints root_cause for manual review, and enforces structural quality minimums (root_cause >= 20 chars, evidence >= 2, remediation_steps >= 2). The conftest.py autouse mock satisfies all structural assertions deterministically.
+
+## WO-016: User Story: WO-016 - Dashboard Error Handling for All Failure Paths
+- **Status:** completed
+- **Commit:** `e59e3cf`
+- **Files:** 2 (+226/-11)
+- **Duration:** 415ss
+- **Approach:** Added comprehensive error handling to dashboard.py by wrapping the requests.post call in a try/except block. Extracted two helper functions: handle_http_error(response) dispatches on status code (422, 502, other) and handle_network_error(exc) dispatches on exception type (ConnectionError, Timeout, RequestException). The HTTP 200 path wraps response.json() in a nested try/except for JSONDecodeError. Every error path calls st.error() with a user-friendly static message followed by st.stop() to prevent downstream rendering. Added 'import json' for JSONDecodeError. Created test_dashboard_errors.py with 22 unit tests using the sys.modules mock pattern (same as test_dashboard_api.py) — each test uses _run_dashboard_error() to re-import dashboard with mocked streamlit and a controlled requests.post side_effect or mock response.
